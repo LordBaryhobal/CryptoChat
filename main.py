@@ -6,5 +6,8 @@ if __name__ == "__main__":
 
     client = Client("vlbelintrocrypto.hevs.ch", 6000)
     client.connect()
-    input()
+    msg = input("Entrez votre message: ")
+    client.send(msg)
+    msg2 = client.receive()
+    print("Received: " + msg2)
     client.disconnect()
