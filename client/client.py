@@ -1,4 +1,5 @@
 import socket
+from typing import Union
 
 
 class Client:
@@ -7,7 +8,7 @@ class Client:
     def __init__(self, host: str, port: int) -> None:
         self.host: str = host
         self.port: int = port
-        self.socket: socket.socket | None = None
+        self.socket: Union[socket.socket, None] = None
 
     def connect(self) -> bool:
         """
@@ -65,13 +66,13 @@ class Client:
         msgBytes = self.socket.recv(4096)
 
         if msgBytes[0:3] != b"ISC":
-            print(f"Erreur de format: ne commence par ISC mais par {msgBytes[0:3]}")
+            print(f"Format error: the payload does not start with ISC but {msgBytes[0:3]}")
             return ""
 
         msgType = msgBytes[3:4].decode("utf-8")
 
         if msgType not in ["t", "i", "s"]:
-            print(f"Erreur de format: le type de message est '{msgType}'")
+            print(f"Format error: the message type is '{msgType}'")
             return ""
 
         length = int.from_bytes(msgBytes[4:6], "big")
