@@ -10,10 +10,16 @@ class ShiftEncryption(Algorithm):
         return f"<Shift(key={self.key})>"
 
     def encode(self, plaintext: str) -> bytes:
-        out = list(plaintext.encode("UTF-8"))
+        out = b""
+
         for i in range(len(plaintext)):
-            out[i] = out[i] + self.key
-        return bytes(out)
+            plainBytes = plaintext[i].encode("utf-8")
+            value = int.from_bytes(plainBytes, "big")
+            encodedValue = value + self.key
+
+            out += encodedValue.to_bytes(Protocol.BYTE_SIZE, "big")
+
+        return out
 
     def decode(self, ciphertext: str) -> str:
         ciphertext = list(ciphertext)
