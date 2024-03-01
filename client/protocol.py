@@ -66,11 +66,9 @@ class Protocol:
 
         byteList += len(payload).to_bytes(2, "big")
 
-        payloadBytes = payload.encode("utf-8")
-
-        for byte in payloadBytes:
-            byteList += [0] * (Protocol.BYTE_SIZE - 1)
-            byteList.append(byte)
+        for char in payload:
+            charBytes = char.encode("utf-8").rjust(Protocol.BYTE_SIZE, b"\0")
+            byteList += charBytes
 
         return bytes(byteList)
 
@@ -144,7 +142,9 @@ class Protocol:
         length = int.from_bytes(payloadBytes[:2], "big")
         textBytes = []
         for i in range(length):
-            textBytes.append(payloadBytes[2 + (i + 1) * Protocol.BYTE_SIZE - 1])
+            pos = 2 + i * Protocol.BYTE_SIZE
+            charBytes = payloadBytes[pos:pos + Protocol.BYTE_SIZE].lstrip(b"\0")
+            textBytes += charBytes
 
         return bytes(textBytes).decode("utf-8")
 
