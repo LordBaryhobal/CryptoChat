@@ -1,9 +1,13 @@
 import socket
-from typing import Union
+from typing import Union, Optional
 
 from PIL import Image
 
 from client.protocol import Protocol
+
+
+class NotConnectedError(Exception):
+    ...
 
 
 class Client:
@@ -12,11 +16,11 @@ class Client:
     def __init__(self, host: str, port: int) -> None:
         self.host: str = host
         self.port: int = port
-        self.socket: Union[socket.socket, None] = None
+        self.socket: Optional[socket.socket] = None
 
     def __enter__(self) -> "Client":
         success = self.connect()
-        return self if success else None
+        return self
 
     def __exit__(self, *args) -> None:
         self.disconnect()
@@ -49,7 +53,7 @@ class Client:
             self.socket.close()
             self.socket = None
 
-    def send(self, msg: Union[str, Image.Image], onlyServer: bool = False) -> None:
+    def send(self, msg: Union[bytes, str, Image.Image], onlyServer: bool = False) -> None:
         """
         Sends a message
         Args:
@@ -59,6 +63,9 @@ class Client:
             TypeError: if the payload is neither a string nor a PIL Image
             ValueError: if the payload is an image exceeding the size limitations
         """
+
+        if self.socket is None:
+            raise NotConnectedError("Cannot send messages unless connected to the server")
 
         payload = Protocol.encode(msg, onlyServer)
         self.socket.send(payload)
@@ -70,8 +77,11 @@ class Client:
         Returns:
             the received message, or an empty string if the format is incorrect
         Raises:
-            ProtocolError: if the payload is malformed (missing magic bytes, invalid message type, etc.
+            ProtocolError: if the payload is malformed (missing magic bytes, invalid message type, etc.)
         """
+
+        if self.socket is None:
+            raise NotConnectedError("Cannot receive messages unless connected to the server")
 
         msgBytes = self.socket.recv(4096)
 

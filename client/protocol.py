@@ -20,7 +20,7 @@ class Protocol:
     MAX_IMAGE_HEIGHT = 128
 
     @staticmethod
-    def encode(payload: Union[str, Image.Image], onlyServer: bool = False) -> bytes:
+    def encode(payload: Union[bytes, str, Image.Image], onlyServer: bool = False) -> bytes:
         """
         Encodes a payload into bytes to send to the server
         Args:
@@ -46,8 +46,12 @@ class Protocol:
             payloadBytes = Protocol.encodeImagePayload(payload)
             typeByte = Protocol.IMAGE
 
+        elif isinstance(payload, bytes):
+            payloadBytes = payload
+            typeByte = Protocol.SERVER if onlyServer else Protocol.TEXT
+
         else:
-            raise TypeError("Unsupported payload type, must be either a str or an Image")
+            raise TypeError(f"Unsupported payload type '{type(payload)}', must be either a str or an Image")
 
         return Protocol.MAGIC + typeByte + payloadBytes
 
