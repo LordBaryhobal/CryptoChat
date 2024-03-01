@@ -1,6 +1,10 @@
 import socket
 from typing import Union
 
+from PIL import Image
+
+from client.protocol import Protocol
+
 
 class Client:
     """Simple class to send and receive messages using a TCP socket"""
@@ -14,7 +18,8 @@ class Client:
         """
         Tries to connect to the server
 
-        Returns: True if the connection was successful, False otherwise
+        Returns:
+            `True` if the connection was successful, `False` otherwise
         """
 
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -37,49 +42,35 @@ class Client:
             self.socket.close()
             self.socket = None
 
-    def send(self, msg: str, msgType: str = "t") -> None:
+    def send(self, msg: Union[str, Image.Image], onlyServer: bool = False) -> None:
         """
-        Sends a message with the given message type
+        Sends a message
         Args:
             msg: the message to send
-            msgType: the message type (one of 't', 'i' or 's')
+            onlyServer: (for text message) whether this message is only sent to the server or broadcast to everyone
+        Raises:
+            TypeError: if the payload is neither a string nor a PIL Image
+            ValueError: if the payload is an image exceeding the size limitations
         """
 
-        payload = b"ISC" + msgType.encode("utf-8")
-        length = len(msg)
-        payload += length.to_bytes(2, "big")
-
-        msgBytes = msg.encode("utf-8")
-        for b in msgBytes:
-            payload += bytes([0, 0, 0, b])
-
+        payload = Protocol.encode(msg, onlyServer)
         self.socket.send(payload)
 
     def receive(self) -> str:
         """
         Waits and reads a message from the server
 
-        Returns: the received message, or an empty string
-        if the format is incorrect
+        Returns:
+            the received message, or an empty string if the format is incorrect
+        Raises:
+            ProtocolError: if the payload is malformed (missing magic bytes, invalid message type, etc.
         """
 
         msgBytes = self.socket.recv(4096)
 
-        if msgBytes[0:3] != b"ISC":
-            print(f"Format error: the payload does not start with ISC but {msgBytes[0:3]}")
-            return ""
+        msg = Protocol.decode(msgBytes)
+        if isinstance(msg, str):
+            return msg
 
-        msgType = msgBytes[3:4].decode("utf-8")
-
-        if msgType not in ["t", "i", "s"]:
-            print(f"Format error: the message type is '{msgType}'")
-            return ""
-
-        length = int.from_bytes(msgBytes[4:6], "big")
-
-        msg = b""
-        for i in range(0, length):
-            offset = 9 + i * 4
-            msg += msgBytes[offset:offset + 1]
-
-        return msg.decode("utf-8")
+        else:
+            return f"<image ({msg.width}x{msg.height})>"
