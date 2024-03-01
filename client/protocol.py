@@ -20,7 +20,7 @@ class Protocol:
     MAX_IMAGE_HEIGHT = 128
 
     @staticmethod
-    def encode(payload: Union[bytes, str, Image.Image], onlyServer: bool = False) -> bytes:
+    def encode(payload: Union[str, Image.Image, bytes], onlyServer: bool = False) -> bytes:
         """
         Encodes a payload into bytes to send to the server
         Args:
@@ -47,7 +47,8 @@ class Protocol:
             typeByte = Protocol.IMAGE
 
         elif isinstance(payload, bytes):
-            payloadBytes = payload
+            length = len(payload) // Protocol.BYTE_SIZE
+            payloadBytes = length.to_bytes(2, "big") + payload
             typeByte = Protocol.SERVER if onlyServer else Protocol.TEXT
 
         else:
@@ -106,15 +107,14 @@ class Protocol:
         return bytes(byteList)
 
     @staticmethod
-    def decode(payloadBytes: bytes) -> Union[str, Image.Image]:
+    def decode(payloadBytes: bytes, rawBytes: bool = False) -> Union[str, Image.Image, bytes]:
         """
         Decodes payload bytes into the correct message
         Args:
             payloadBytes: the encoded payload bytes
-
+            rawBytes: if true, the payload will not be decoded and raw bytes will be returned
         Returns:
             the decoded message (either a string or a PIL Image)
-
         Raises:
             ProtocolError: if the payload is malformed (missing magic bytes, invalid message type, etc.)
         """
@@ -124,6 +124,10 @@ class Protocol:
             raise ProtocolError(f"Payload must start with {Protocol.MAGIC} (not {payloadBytes[:magicLen]})")
 
         typeByte = payloadBytes[magicLen:magicLen+1]
+
+        if rawBytes:
+            return payloadBytes[magicLen+1:]
+
         if typeByte == Protocol.TEXT or typeByte == Protocol.SERVER:
             return Protocol.decodeTextPayload(payloadBytes[magicLen+1:])
 

@@ -70,10 +70,12 @@ class Client:
         payload = Protocol.encode(msg, onlyServer)
         self.socket.send(payload)
 
-    def receive(self) -> str:
+    def receive(self, rawBytes: bool = False) -> Union[str, bytes]:
         """
         Waits and reads a message from the server
 
+        Args:
+            rawBytes: whether to receive a structured message (text or image) or raw bytes (i.e. not decoded)
         Returns:
             the received message, or an empty string if the format is incorrect
         Raises:
@@ -85,8 +87,8 @@ class Client:
 
         msgBytes = self.socket.recv(4096)
 
-        msg = Protocol.decode(msgBytes)
-        if isinstance(msg, str):
+        msg = Protocol.decode(msgBytes, rawBytes)
+        if isinstance(msg, (str, bytes)):
             return msg
 
         else:
