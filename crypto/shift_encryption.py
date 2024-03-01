@@ -1,7 +1,10 @@
+from client.protocol import Protocol
 from crypto.algorithm import Algorithm
 
 
 class ShiftEncryption(Algorithm):
+    NAME = "shift"
+
     def __init__(self, key: int = 0):
         super().__init__()
         self.key = key
@@ -26,3 +29,7 @@ class ShiftEncryption(Algorithm):
         for i in range(len(ciphertext)):
             ciphertext[i] = ciphertext[i] - self.key
         return bytes(ciphertext).decode("UTF-8")
+
+    @staticmethod
+    def parseTaskKey(msg: str) -> int:
+        return int(msg.rsplit(" ", 1)[1])

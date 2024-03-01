@@ -2,6 +2,8 @@ from crypto.algorithm import Algorithm
 
 
 class XOREncryption(Algorithm):
+    NAME = "xor"
+
     def __init__(self, key: int = 0):
         super().__init__()
         self.key = key
@@ -14,3 +16,7 @@ class XOREncryption(Algorithm):
 
     def decode(self, ciphertext: str) -> str:
         ...
+
+    @staticmethod
+    def parseTaskKey(msg: str) -> int:
+        return int(msg.rsplit(" ", 1)[1])
