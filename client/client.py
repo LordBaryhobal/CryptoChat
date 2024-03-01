@@ -14,6 +14,13 @@ class Client:
         self.port: int = port
         self.socket: Union[socket.socket, None] = None
 
+    def __enter__(self) -> "Client":
+        success = self.connect()
+        return self if success else None
+
+    def __exit__(self, *args) -> None:
+        self.disconnect()
+
     def connect(self) -> bool:
         """
         Tries to connect to the server
