@@ -1,0 +1,33 @@
+Index: crypto/shift_encryption.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>from crypto.algorithm import Algorithm\r\n\r\n\r\nclass ShiftEncryption(Algorithm):\r\n    def __init__(self, key: int = 0):\r\n        super().__init__()\r\n        self.key = key\r\n\r\n    def __repr__(self):\r\n        return f\"<Shift(key={self.key})>\"\r\n\r\n    def encode(self, plaintext: str) -> bytes:\r\n        out = b\"\"\r\n\r\n        for i in range(len(plaintext)):\r\n            plainBytes = plaintext[i].encode(\"utf-8\")\r\n            value = int.from_bytes(plainBytes, \"big\")\r\n            encodedValue = value + self.key\r\n\r\n            out += encodedValue.to_bytes(Protocol.BYTE_SIZE, \"big\")\r\n\r\n        return out\r\n\r\n    def decode(self, ciphertext: str) -> str:\r\n        ciphertext = list(ciphertext)\r\n        for i in range(len(ciphertext)):\r\n            ciphertext[i] = ciphertext[i] - self.key\r\n        return bytes(ciphertext).decode(\"UTF-8\")\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/crypto/shift_encryption.py b/crypto/shift_encryption.py
+--- a/crypto/shift_encryption.py	
++++ b/crypto/shift_encryption.py	
+@@ -1,3 +1,4 @@
++from client.protocol import Protocol
+ from crypto.algorithm import Algorithm
+ 
+ 
+@@ -21,8 +22,13 @@
+ 
+         return out
+ 
+-    def decode(self, ciphertext: str) -> str:
++    def decode(self, ciphertext: bytes) -> str:
++        out = ""
+         ciphertext = list(ciphertext)
+-        for i in range(len(ciphertext)):
++
++        for i in range(0, len(ciphertext), 4):
++            ciphertext[i:i+4]
+             ciphertext[i] = ciphertext[i] - self.key
+-        return bytes(ciphertext).decode("UTF-8")
++            out += ciphertext[i].decode("utf-8")
++
++        return out
+\ No newline at end of file

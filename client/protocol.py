@@ -182,3 +182,12 @@ class Protocol:
             img.append(line)
 
         return Image.fromarray(img, "RGB")
+
+    @staticmethod
+    def groupBytesIntoInt(payloadBytes: bytes) -> list[int]:
+        ints = []
+        for i in range(0, len(payloadBytes), Protocol.BYTE_SIZE):
+            value = int.from_bytes(payloadBytes[i:i + Protocol.BYTE_SIZE], "big")
+            ints.append(value)
+
+        return ints

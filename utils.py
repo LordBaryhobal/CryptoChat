@@ -33,5 +33,12 @@ def relpath(path: str) -> str:
         the path relative to the project root
     """
 
-    root = os.path.dirname(os.path.realpath(__file__))
-    return os.path.relpath(path, root)
+    return os.path.relpath(path, getRootPath())
+
+def getRootPath() -> str:
+    """
+    Returns the root project path
+    Returns:
+        the path of the project directory
+    """
+    return os.path.dirname(os.path.realpath(__file__))

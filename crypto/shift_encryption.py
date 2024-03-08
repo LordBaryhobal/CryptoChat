@@ -24,11 +24,14 @@ class ShiftEncryption(Algorithm):
 
         return out
 
-    def decode(self, ciphertext: str) -> str:
-        ciphertext = list(ciphertext)
-        for i in range(len(ciphertext)):
-            ciphertext[i] = ciphertext[i] - self.key
-        return bytes(ciphertext).decode("UTF-8")
+    def decode(self, ciphertext: bytes) -> str:
+        ints = Protocol.groupBytesIntoInt(ciphertext)
+        out = []
+
+        for i in range(len(ints)):
+            out.append(ints[i] - self.key)
+
+        return bytes(out).decode("UTF-8")
 
     @staticmethod
     def parseTaskKey(msg: str) -> int:
