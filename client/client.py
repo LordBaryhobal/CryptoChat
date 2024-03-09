@@ -62,6 +62,7 @@ class Client:
         Raises:
             TypeError: if the payload is neither a string nor a PIL Image
             ValueError: if the payload is an image exceeding the size limitations
+            NotConnectedError: if the client is not connected to the server
         """
 
         if self.socket is None:
@@ -80,12 +81,19 @@ class Client:
             the received message, or an empty string if the format is incorrect
         Raises:
             ProtocolError: if the payload is malformed (missing magic bytes, invalid message type, etc.)
+            NotConnectedError: if the client is not connected to the server
         """
 
         if self.socket is None:
             raise NotConnectedError("Cannot receive messages unless connected to the server")
 
-        msgBytes = self.socket.recv(4096)
+        msgBytes = self.socket.recv(len(Protocol.MAGIC) + 1)
+        lengthBytes = Protocol.getPayloadLengthBytesCount(msgBytes)
+
+        msgBytes += self.socket.recv(lengthBytes)
+        payloadLength = Protocol.getPayloadLength(msgBytes)
+
+        msgBytes += self.socket.recv(payloadLength)
 
         msg = Protocol.decode(msgBytes, rawBytes)
         if isinstance(msg, (str, bytes)):

@@ -20,6 +20,59 @@ class Protocol:
     MAX_IMAGE_HEIGHT = 128
 
     @staticmethod
+    def getPayloadLengthBytesCount(magicAndType: bytes) -> int:
+        """
+        Returns the number of bytes to read for the payload length
+        Args:
+            magicAndType: initial magic and type bytes
+
+        Returns:
+            the number of bytes to read for the payload length
+        Raises:
+            ProtocolError: if the payload is malformed (missing magic bytes, invalid message type, etc.)
+        """
+
+        magicLen = len(Protocol.MAGIC)
+        if magicAndType[:magicLen] != Protocol.MAGIC:
+            raise ProtocolError(f"Payload must start with {Protocol.MAGIC} (not {magicAndType[:magicLen]})")
+
+        typeByte = magicAndType[magicLen:magicLen+1]
+
+        if typeByte == Protocol.TEXT or typeByte == Protocol.SERVER:
+            return 2
+
+        if typeByte == Protocol.IMAGE:
+            return 2
+
+        raise ProtocolError(f"Unrecognized payload type {typeByte}")
+
+    @staticmethod
+    def getPayloadLength(headerBytes: bytes) -> int:
+        """
+        Returns the number of bytes to read for the payload
+        Args:
+            headerBytes: the initial header bytes (magic + type + payload size)
+        Returns:
+            the number of bytes to read for the payload
+        Raises:
+            ProtocolError: if the payload is malformed (missing magic bytes, invalid message type, etc.)
+        """
+
+        magicLen = len(Protocol.MAGIC)
+        typeByte = headerBytes[magicLen:magicLen+1]
+
+        if typeByte == Protocol.TEXT or typeByte == Protocol.SERVER:
+            return int.from_bytes(headerBytes[magicLen+1:magicLen+3], "big") * Protocol.BYTE_SIZE
+
+        if typeByte == Protocol.IMAGE:
+            width = int.from_bytes(headerBytes[magicLen+1:magicLen+2], "big")
+            height = int.from_bytes(headerBytes[magicLen+2:magicLen+3], "big")
+            return width * height * 3
+
+        raise ProtocolError(f"Unrecognized payload type {typeByte}")
+
+
+    @staticmethod
     def encode(payload: Union[str, Image.Image, bytes], onlyServer: bool = False) -> bytes:
         """
         Encodes a payload into bytes to send to the server
