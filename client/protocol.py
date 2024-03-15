@@ -238,9 +238,45 @@ class Protocol:
 
     @staticmethod
     def groupBytesIntoInt(payloadBytes: bytes) -> list[int]:
+        """
+        Groups padded bytes into ints according to the byte size
+        Args:
+            payloadBytes: the payload bytes
+
+        Returns:
+            the array of ints
+        """
+
         ints = []
         for i in range(0, len(payloadBytes), Protocol.BYTE_SIZE):
             value = int.from_bytes(payloadBytes[i:i + Protocol.BYTE_SIZE], "big")
             ints.append(value)
 
         return ints
+
+    @staticmethod
+    def intToPaddedBytes(value: int) -> bytes:
+        """
+        Converts an int into its padded-bytes representation
+        Args:
+            value: the int to convert
+        Returns:
+            the bytes representation
+        """
+        return value.to_bytes(Protocol.BYTE_SIZE, "big")
+
+    @staticmethod
+    def bytesToInt(value: bytes) -> int:
+        """
+        Converts padded bytes into an int
+        Args:
+            value: the bytes
+        Returns:
+            the int value
+        """
+        return int.from_bytes(value, "big")
+
+    @staticmethod
+    def charToInt(char: str) -> int:
+        charBytes = char.encode("utf-8")
+        return Protocol.bytesToInt(charBytes)

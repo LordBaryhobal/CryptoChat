@@ -16,11 +16,10 @@ class ShiftEncryption(Algorithm):
         out = b""
 
         for i in range(len(plaintext)):
-            plainBytes = plaintext[i].encode("utf-8")
-            value = int.from_bytes(plainBytes, "big")
+            value = Protocol.charToInt(plaintext[i])
             encodedValue = value + self.key
 
-            out += encodedValue.to_bytes(Protocol.BYTE_SIZE, "big")
+            out += Protocol.intToPaddedBytes(encodedValue)
 
         return out
 

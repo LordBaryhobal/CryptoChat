@@ -1,6 +1,4 @@
-from typing import List
 from client.protocol import Protocol
-
 from crypto.algorithm import Algorithm
 
 
@@ -19,10 +17,11 @@ class VigenereEncryption(Algorithm):
         count = 0
         out = b""
         for i in range(len(plaintext)):
-            plainChar = int.from_bytes(plaintext[i].encode("utf-8"), "big")
-            keyChar = int.from_bytes(key[count].encode("utf-8"), "big")
+            plainChar = Protocol.charToInt(plaintext[i])
+            keyChar = Protocol.charToInt(key[count])
 
-            out += ((plainChar + keyChar).to_bytes(Protocol.BYTE_SIZE, "big"))
+            encodedValue = plainChar + keyChar
+            out += Protocol.intToPaddedBytes(encodedValue)
             count += 1
             if count == len(key):
                 count = 0
