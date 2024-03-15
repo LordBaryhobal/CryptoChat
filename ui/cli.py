@@ -2,8 +2,9 @@ from typing import Type, Optional
 
 from client.client import Client
 from crypto.algorithm import Algorithm
+from crypto.rsa_encryption import RSAEncryption
 from crypto.shift_encryption import ShiftEncryption
-from crypto.xor_encryption import XOREncryption
+from crypto.vigenere_encryption import VigenereEncryption
 from utils import formatException
 
 
@@ -12,8 +13,12 @@ class CLI:
         ["Manual message", None, False],
         ["Shift (encryption)", ShiftEncryption, False],
         ["Shift (decryption)", ShiftEncryption, True],
-        ["XOR (encryption)", XOREncryption, False],
-        ["XOR (decryption)", XOREncryption, True],
+        #["XOR (encryption)", XOREncryption, False],
+        #["XOR (decryption)", XOREncryption, True],
+        ["Vigénère (encryption)", VigenereEncryption, False],
+        ["Vigénère (decryption)", VigenereEncryption, True],
+        ["RSA (encryption)", RSAEncryption, False],
+        ["RSA (decryption)", RSAEncryption, True],
         ["Quit", None, False],
     ]
 

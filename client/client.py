@@ -39,7 +39,7 @@ class Client:
             self.socket.connect((self.host, self.port))
         except socket.error:
             self.socket = None
-            print("An error occurred while trying to connect")
+            print("[ERROR] An error occurred while trying to connect")
             return False
 
         return True
@@ -87,12 +87,15 @@ class Client:
         if self.socket is None:
             raise NotConnectedError("Cannot receive messages unless connected to the server")
 
+        # Read magic bytes + type byte
         msgBytes = self.socket.recv(len(Protocol.MAGIC) + 1)
         lengthBytes = Protocol.getPayloadLengthBytesCount(msgBytes)
 
+        # Read payload size
         msgBytes += self.socket.recv(lengthBytes)
         payloadLength = Protocol.getPayloadLength(msgBytes)
 
+        # Read payload
         msgBytes += self.socket.recv(payloadLength)
 
         msg = Protocol.decode(msgBytes, rawBytes)
