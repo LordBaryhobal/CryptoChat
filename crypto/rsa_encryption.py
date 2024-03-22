@@ -31,3 +31,14 @@ class RSAEncryption(Algorithm):
         pubKey = (n, e)
 
         return pubKey
+
+    @staticmethod
+    def generateKeyPair() -> tuple[tuple[int, int], tuple[int, int]]:
+        # TODO: find 2 large prime numbers p and q, with a large difference
+        # TODO: compute n = p * q -> n should be smaller than 2^32 (max value on 4 bytes)
+        # TODO: compute lambda = |(p-1)(q-1)| / gcd(p-1, q-1)
+        # TODO: choose a number e in ]1; lambda[ such that e and lambda are coprime
+        # TODO: find d, the modular inverse of e (mod lambda)
+        # priv = (n, d)
+        # pub = (n, e)
+        ...
