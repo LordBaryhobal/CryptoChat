@@ -61,6 +61,29 @@ class Ring:
 
         return r
 
+    def fastPow(self, a: int, b: int) -> int:
+        """
+        Raises a number to the given power using a fast algorithm
+        Args:
+            a: the base
+            b: the exponent
+        Returns:
+            the exponentiation of `a` to the power of `b`
+        """
+
+        result = 1
+        currentPower: int = a % self.modulo
+        powerSelect: int = b
+
+        while powerSelect != 0:
+            if powerSelect & 1:
+                result = self.multiply(result, currentPower)
+
+            currentPower = self.multiply(currentPower, currentPower)
+            powerSelect >>= 1
+
+        return result
+
     def inverse(self, a: int) -> int:
         """
         Finds the inverse of the given number
@@ -71,3 +94,14 @@ class Ring:
             the inverse of `a`
         """
         return getModularInverse(a, self.modulo)
+
+if __name__ == "__main__":
+    ring = Ring(17)
+    import time
+    t1 = time.time()
+    print(ring.pow(120, 23000875))
+    t2 = time.time()
+    print(ring.fastPow(120, 23000875))
+    t3 = time.time()
+    print(f"pow: {t2-t1:.5f}s")
+    print(f"fast pow: {t3-t2:.5f}s")
