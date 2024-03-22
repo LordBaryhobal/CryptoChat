@@ -2,45 +2,69 @@ import random
 import re
 from typing import Optional
 
+from client.protocol import Protocol
 from crypto.algorithm import Algorithm
-from math_utils.modulo import getModularInverse
-from math_utils.primes import areCoprimes, getLargestPrime, gcd
+from math_utils.modulo import extendedGCD
+from math_utils.primes import areCoprimes, getLargestPrime
+from math_utils.ring import Ring
 
 
 class RSAEncryption(Algorithm):
-    NAME = "rsa"
+    NAME = "RSA"
 
-    def __init__(self, pubKey: tuple[int, int], privKey: tuple[int, int]):
+    def __init__(self, publicKey: tuple[int, int], privateKey: Optional[tuple[int, int]] = None):
         super().__init__()
-        self.pubKey: tuple[int, int] = pubKey
-        self.privKey: tuple[int, int] = privKey
+        self.publicKey: tuple[int, int] = publicKey
+        self.privateKey: Optional[tuple[int, int]] = privateKey
 
     def __repr__(self):
-        return f"<RSA(public={self.pubKey}, private={self.privKey})>"
+        return f"<RSA(public={self.publicKey}, private={self.privateKey})>"
 
     def encode(self, plaintext: str) -> bytes:
-        ...
+        out = b""
+
+        n, e = self.publicKey
+        ring = Ring(n)
+        for i in range(len(plaintext)):
+            value = Protocol.charToInt(plaintext[i])
+            encodedValue = ring.fastPow(value, e)
+            out += Protocol.intToPaddedBytes(encodedValue)
+
+        return out
 
     def decode(self, ciphertext: bytes) -> str:
-        ...
+        if self.privateKey is None:
+            raise Exception("Cannot decode without a private key")
+
+        ints = Protocol.groupBytesIntoInt(ciphertext)
+        out = []
+
+        n, d = self.privateKey
+        ring = Ring(n)
+        for i in range(len(ints)):
+            encodedValue = ints[i]
+            value = ring.fastPow(encodedValue, d)
+            out.append(value)
+
+        return bytes(out).decode("UTF-8")
 
     @staticmethod
     def parseTaskKey(msg: str) -> tuple[int, int]:
-        m: Optional[re.Match[str]] = re.match(r"n=(\d+), e=(\d+)", msg)
+        m: Optional[re.Match[str]] = re.search(r"n=(\d+), e=(\d+)", msg)
 
         n: int = int(m.group(1))
         e: int = int(m.group(2))
 
-        pubKey = (n, e)
+        publicKey = (n, e)
 
-        return pubKey
+        return publicKey
 
     @staticmethod
     def generateKeyPair() -> tuple[tuple[int, int], tuple[int, int]]:
         """
         Generates a public/private key pair
         Returns:
-            a tuple containing the private and public key (in this order)
+            a tuple containing the public and private key (in this order)
         """
 
         # Find 2 large prime numbers p and q, with a large difference
@@ -53,26 +77,34 @@ class RSAEncryption(Algorithm):
         # Compute n = p * q -> n should be smaller than 2^32 (max value on 4 bytes)
         n: int = p * q
 
-        # Compute lambda = |(p-1)(q-1)| / gcd(p-1, q-1)
-        lambda_: int = abs((p - 1) * (q - 1)) // gcd(p - 1, q - 1)
+        k: int = (p - 1) * (q - 1)
 
-        # Choose a number e in ]1; lambda[ such that e and lambda are coprime
-        for e in range(lambda_ - 1, 1, -1):
-            if areCoprimes(e, lambda_):
+        for e in range(k - 1, 1, -1):
+            if areCoprimes(e, k):
                 break
 
         else:
-            raise Exception("Could not find e coprime with lambda")
+            raise Exception("Could not find e coprime with k")
 
-        # Find d, the modular inverse of e (mod n)
-        d: int = getModularInverse(e, n)
+        bezoutA, bezoutB, _, _, _ = extendedGCD(e, k)
+        if bezoutA < 0:
+            bezoutA += k
 
-        privateKey = (n, d)
+        d: int = bezoutA
+
         publicKey = (n, e)
+        privateKey = (n, d)
 
-        return (privateKey, publicKey)
+        return (publicKey, privateKey)
 
 
 if __name__ == "__main__":
-    private, public = RSAEncryption.generateKeyPair()
-    print(private, public)
+    public, private = RSAEncryption.generateKeyPair()
+    print(public, private)
+
+    rsa = RSAEncryption(public, private)
+    msg = "banana"
+    encoded = rsa.encode(msg)
+    print(encoded)
+    decoded = rsa.decode(encoded)
+    print(decoded)
