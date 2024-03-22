@@ -9,6 +9,10 @@ from utils import formatException
 
 
 class CLI:
+    """
+    Class to provide a console interface for executing the different tasks
+    """
+
     ACTIONS: list[list[str, Type[Algorithm], bool]] = [
         ["Manual message", None, False],
         ["Shift (encryption)", ShiftEncryption, False],
@@ -27,11 +31,19 @@ class CLI:
         self.client = client
 
     def mainloop(self) -> None:
+        """
+        Main excution loop, displaying menus in the console, letting the user
+        send messages and perform tasks
+        """
+
         while self.running:
             action = self.chooseAction()
+
+            # Quit
             if action == len(self.ACTIONS) - 1:
                 self.running = False
 
+            # Manual message
             elif action == 0:
                 print("Choose a mode:")
                 print("  1) Broadcast")
@@ -43,15 +55,16 @@ class CLI:
                 try:
                     self.client.send(msg, choice == 2)
 
-                    ans = self.client.receive()
-                    print(f"[SERVER] {ans}")
+                    answer = self.client.receive()
+                    print(f"[SERVER] {answer}")
                     if choice == 2:
-                        ans = self.client.receive(True)
-                        print(f"[SERVER] {ans}")
+                        answer = self.client.receive(True)
+                        print(f"[SERVER] {answer}")
                 except Exception as e:
                     print(f"[ERROR] An error occurred while trying to send manual message")
                     print(f"[ERROR] {formatException(e)}")
 
+            # Crypto task
             else:
                 try:
                     self.startTask(action)
@@ -60,6 +73,12 @@ class CLI:
                     print(f"[ERROR] {formatException(e)}")
 
     def chooseAction(self) -> int:
+        """
+        Displays the main menu and lets the use choose one of the action
+        Returns:
+            the chosen action index
+        """
+
         print("Choose an action:")
 
         for i, (name, algo, decrypt) in enumerate(self.ACTIONS):
@@ -70,6 +89,12 @@ class CLI:
         return choice - 1
 
     def startTask(self, action: int) -> None:
+        """
+        Starts the given task
+        Args:
+            action: the index of the task to perform
+        """
+
         actionInfo = self.ACTIONS[action]
         algorithm: Type[Algorithm] = actionInfo[1]
         decrypt: bool = actionInfo[2]
@@ -81,15 +106,18 @@ class CLI:
         self.client.send(message, True)
 
         if not decrypt:
+            # Parse the encryption key from the server's message
             keyMsg = self.client.receive()
             print(f"[SERVER] {keyMsg}")
             key = algorithm.parseTaskKey(keyMsg)
             print(f"[TASK] key = {key}")
 
+            # Get the message to encrypt
             plaintextMsg = self.client.receive()
             print(f"[SERVER] {plaintextMsg}")
             print(f"[TASK] plaintext = {plaintextMsg}")
 
+            # Encrypt the message and send the result
             transcoder = algorithm(key)
             print(f"[TASK] transcoder = {transcoder}")
 
@@ -97,6 +125,7 @@ class CLI:
             print(f"[TASK] encrypted bytes = {encrypted}")
             self.client.send(encrypted, True)
 
+            # Parse the answer and determine if it was a success
             successMsg = self.client.receive()
             print(f"[SERVER] {successMsg}")
             success = self.parseEncodeSuccess(successMsg)
@@ -109,8 +138,29 @@ class CLI:
             ciphertextMsg = self.client.receive(True)
             print(f"[SERVER] {ciphertextMsg}")
             print(f"[TASK] ciphertext = {ciphertextMsg}")
+            """key = algorithm.parseTaskKey(taskMsg)
+            transcoder = algorithm(key)
+            print(f"[TASK] transcoder = {transcoder}")
+            decrypted = transcoder.decode(ciphertextMsg)
+            print(f"[TASK] decrypted msg = {decrypted}")
+            self.client.send(decrypted, True)
+
+            successMsg = self.client.receive()
+            print(f"[SERVER] {successMsg}")
+            success = self.parseDecodeSuccess(successMsg)
+
+            print("Success !" if success else "Oops, it didn't work")"""
 
     def readInt(self, minVal: Optional[int] = None, maxVal: Optional[int] = None) -> int:
+        """
+        Reads an integer from the console
+        Args:
+            minVal: the minimum value (incl.). If None, there is no lower bound on the value
+            maxVal: the maximum value (incl.). If None, there is no upper bound on the value
+        Returns:
+            the value given by the user
+        """
+
         while True:
             try:
                 val = int(input("> "))
@@ -125,6 +175,15 @@ class CLI:
             return val
 
     def readFloat(self, minVal: Optional[float] = None, maxVal: Optional[float] = None) -> float:
+        """
+        Reads a float from the console
+        Args:
+            minVal: the minimum value (incl.). If None, there is no lower bound on the value
+            maxVal: the maximum value (incl.). If None, there is no upper bound on the value
+        Returns:
+            the value given by the user
+        """
+
         while True:
             try:
                 val = float(input("> "))
@@ -139,6 +198,14 @@ class CLI:
             return val
 
     def readStr(self, maxLen: Optional[int] = None) -> str:
+        """
+        Reads a string from the console
+        Args:
+            maxLen: the maximum length of the string. If None, there is no limit
+        Returns:
+            the string given by the user
+        """
+
         while True:
             try:
                 val = input("> ")
@@ -151,6 +218,14 @@ class CLI:
             return val
 
     def parseEncodeSuccess(self, msg: str) -> bool:
+        """
+        Parses the server's reply and determines the success of the last task
+        Args:
+            msg: the server's reply message
+        Returns:
+            true if it is a success, false otherwise
+        """
+
         if msg == "The encoding is correct !":
             return True
 
