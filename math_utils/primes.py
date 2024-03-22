@@ -52,13 +52,7 @@ def areCoprimes(a: int, b: int) -> bool:
         True if the numbers are coprime, False otherwise
     """
 
-    # Only check up to the smallest number for more efficiency
-    for i in range(2, min(a, b)):
-        # If `i` is a factor of `a` and a factor of `b`
-        if a % i == 0 and b % i == 0:
-            return False
-
-    return True
+    return gcd(a, b) == 1
 
 
 def gcd(a: int, b: int) -> int:
