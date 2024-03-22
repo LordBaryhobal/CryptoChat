@@ -1,17 +1,17 @@
-def getModularInverse(a: int, n: int) -> int:
+def extendedGCD(a: int, b: int) -> tuple[int, int, int, int, int]:
     """
-    Calculates the modular inverse of a number
-    using the Extended Euclidean Algorithm
+    Computes the Extended Euclidean Algorithm
 
     Args:
-        a: the number to invert
-        n: the modulo
+        a: the first value
+        b: the second value
     Returns:
-        the modular inverse of `a` (mod `n`)
+        a tuple containing Bezouts coefficients, the GCD of `a` and `b`,
+        and the quotients of `a` and `b` by the GCD
     """
 
     oldR: int = a
-    r: int = n
+    r: int = b
 
     oldS: int = 1
     s: int = 0
@@ -25,7 +25,22 @@ def getModularInverse(a: int, n: int) -> int:
         oldS, s = s, oldS - quotient * s
         oldT, t = t, oldT - quotient * t
 
-    return oldS % n
+    return (oldS, oldT, oldR, t, s)
+
+def getModularInverse(a: int, n: int) -> int:
+    """
+    Calculates the modular inverse of a number
+    using the Extended Euclidean Algorithm
+
+    Args:
+        a: the number to invert
+        n: the modulo
+    Returns:
+        the modular inverse of `a` (mod `n`)
+    """
+
+    bezoutA, bezoutB, _, _, _ = extendedGCD(a, n)
+    return bezoutA % n
 
 
 if __name__ == '__main__':
