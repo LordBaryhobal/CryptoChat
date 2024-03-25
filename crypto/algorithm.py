@@ -1,3 +1,6 @@
+from client.client import Client
+
+
 class Algorithm:
     NAME = ""
 
@@ -12,4 +15,8 @@ class Algorithm:
 
     @staticmethod
     def parseTaskKey(msg: str) -> int:
+        raise NotImplementedError
+
+    @staticmethod
+    def decryptTask(taskMsg: str, client: Client) -> None:
         raise NotImplementedError

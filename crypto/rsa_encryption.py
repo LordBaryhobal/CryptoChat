@@ -2,6 +2,7 @@ import random
 import re
 from typing import Optional
 
+from client.client import Client
 from client.protocol import Protocol
 from crypto.algorithm import Algorithm
 from math_utils.modulo import extendedGCD
@@ -79,7 +80,7 @@ class RSAEncryption(Algorithm):
 
         k: int = (p - 1) * (q - 1)
 
-        for e in range(k - 1, 1, -1):
+        for e in range(k - 2, 1, -1):
             if areCoprimes(e, k):
                 break
 
@@ -96,6 +97,29 @@ class RSAEncryption(Algorithm):
         privateKey = (n, d)
 
         return (publicKey, privateKey)
+
+    @staticmethod
+    def decryptTask(taskMsg: str, client: Client) -> None:
+        # Generate key pair
+        public, private = RSAEncryption.generateKeyPair()
+        publicStr = f"{public[0]},{public[1]}"
+        decryptor = RSAEncryption(public, private)
+        print(decryptor)
+        print("message sent to server: " + publicStr)
+
+        # Send public key (as n,e)
+        client.send(publicStr, True)
+
+        # Rreceive encrypted message
+        encryptedMessage = client.receive(True)
+        print(encryptedMessage)
+
+        # Decrypt message using private key
+        decryptedMessage = decryptor.decode(encryptedMessage)
+        print(decryptedMessage)
+
+        # Send decrypted message
+        client.send(decryptedMessage, True)
 
 
 if __name__ == "__main__":

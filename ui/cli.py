@@ -135,21 +135,14 @@ class CLI:
         else:
             taskMsg = self.client.receive()
             print(f"[SERVER] {taskMsg}")
-            ciphertextMsg = self.client.receive(True)
-            print(f"[SERVER] {ciphertextMsg}")
-            print(f"[TASK] ciphertext = {ciphertextMsg}")
-            """key = algorithm.parseTaskKey(taskMsg)
-            transcoder = algorithm(key)
-            print(f"[TASK] transcoder = {transcoder}")
-            decrypted = transcoder.decode(ciphertextMsg)
-            print(f"[TASK] decrypted msg = {decrypted}")
-            self.client.send(decrypted, True)
+
+            algorithm.decryptTask(taskMsg, self.client)
 
             successMsg = self.client.receive()
             print(f"[SERVER] {successMsg}")
             success = self.parseDecodeSuccess(successMsg)
 
-            print("Success !" if success else "Oops, it didn't work")"""
+            print("Success !" if success else "Oops, it didn't work")
 
     def readInt(self, minVal: Optional[int] = None, maxVal: Optional[int] = None) -> int:
         """
