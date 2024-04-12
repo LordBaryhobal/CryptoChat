@@ -3,7 +3,10 @@ from typing import Union, Optional
 
 from PIL import Image
 
+from ansi import ANSI
 from client.protocol import Protocol
+from logger import Logger
+from utils import formatException
 
 
 class NotConnectedError(Exception):
@@ -17,6 +20,12 @@ class Client:
         self.host: str = host
         self.port: int = port
         self.socket: Optional[socket.socket] = None
+        self.logger = Logger("Client", styles={
+            "info": [],
+            "error": [ANSI.RED, ANSI.BOLD],
+            "warning": [ANSI.YELLOW, ANSI.ITALIC],
+            "success": [ANSI.LGREEN, ANSI.ITALIC]
+        })
 
     def __enter__(self) -> "Client":
         success = self.connect()
@@ -37,9 +46,10 @@ class Client:
 
         try:
             self.socket.connect((self.host, self.port))
-        except socket.error:
+        except socket.error as e:
             self.socket = None
-            print("[ERROR] An error occurred while trying to connect")
+            self.logger.error("An error occurred while trying to connect")
+            self.logger.error(formatException(e))
             return False
 
         return True

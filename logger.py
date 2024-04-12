@@ -4,7 +4,8 @@ from ansi import ANSI
 
 
 class Logger:
-    def __init__(self, fmt: str = "[{time}][{level}] {message}", styles: dict[str, list[int]] = None):
+    def __init__(self, name: str = "", fmt: str = "[{time}][{name}/{level}] {message}", styles: dict[str, list[int]] = None):
+        self.name: str = name
         self.fmt: str = fmt
         if styles is None:
             styles = {}
@@ -26,6 +27,7 @@ class Logger:
         openingStyle = ANSI.build(self.styles.get(level, []))
         text = self.fmt.format(
             time=time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
+            name=self.name,
             level=level.upper(),
             message=msg
         )
