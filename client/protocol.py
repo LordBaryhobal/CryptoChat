@@ -280,3 +280,8 @@ class Protocol:
     def charToInt(char: str) -> int:
         charBytes = char.encode("utf-8")
         return Protocol.bytesToInt(charBytes)
+
+    @staticmethod
+    def getMessageType(messageBytes: bytes) -> bytes:
+        magicLen = len(Protocol.MAGIC)
+        return messageBytes[magicLen:magicLen+1]

@@ -24,7 +24,7 @@
     <item>
      <widget class="QTabWidget" name="tabWidget">
       <property name="currentIndex">
-       <number>4</number>
+       <number>1</number>
       </property>
       <widget class="QWidget" name="tab">
        <attribute name="title">
@@ -162,30 +162,14 @@
              <item>
               <widget class="QLabel" name="label_31">
                <property name="text">
-                <string>Success ?</string>
+                <string>Outcome</string>
                </property>
               </widget>
              </item>
              <item>
-              <widget class="QPushButton" name="shitSuccessIcon">
-               <property name="enabled">
-                <bool>true</bool>
-               </property>
+              <widget class="QLabel" name="shiftSuccess">
                <property name="text">
-                <string/>
-               </property>
-               <property name="icon">
-                <iconset theme="user-offline">
-                 <normaloff>.</normaloff>.</iconset>
-               </property>
-               <property name="checkable">
-                <bool>false</bool>
-               </property>
-               <property name="default">
-                <bool>false</bool>
-               </property>
-               <property name="flat">
-                <bool>true</bool>
+                <string>-</string>
                </property>
               </widget>
              </item>
@@ -512,7 +496,8 @@
                 <string/>
                </property>
                <property name="icon">
-                <iconset theme="user-offline"/>
+                <iconset theme="user-offline">
+                 <normaloff>.</normaloff>.</iconset>
                </property>
                <property name="checkable">
                 <bool>false</bool>
