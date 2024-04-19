@@ -11,6 +11,7 @@ from PyQt5.QtWidgets import QMainWindow, QApplication, QLabel
 from ansi import ANSI
 from client.client import Client, MessageListener
 from client.protocol import Protocol
+from crypto.rsa_encryption import RSAEncryption
 from crypto.shift_encryption import ShiftEncryption
 from crypto.vigenere_encryption import VigenereEncryption
 from logger import Logger
@@ -60,8 +61,8 @@ class GUI(QApplication):
 
         self.win.chatSendBtn.clicked.connect(self.chatMessage)
         self.win.shiftTaskBtn.clicked.connect(self.doShiftTask)
-
         self.win.vigenereTaskBtn.clicked.connect(self.doVigenereTask)
+        self.win.rsaTaskBtn.clicked.connect(self.doRSATask)
 
         self.client.addOnReceiveListener(ReceivedMessageListener(self))
         self.client.addOnSendListener(SentMessageListener(self))
@@ -176,6 +177,53 @@ class GUI(QApplication):
         else:
             self.logger.warn("Oops, it didn't work")
             self.win.shiftDebugSuccess.setText("Failed !")
+
+    def doRSATask(self) -> None:
+        encrypt = self.win.rsaEncryptRadio.isChecked()
+
+        if encrypt:
+            self.win.rsaDebugSuccess.setText("-")
+            self.win.rsaDebugN.setText("-")
+            self.win.rsaDebugE.setText("-")
+            self.win.rsaDebugD.setText("-")
+
+            dataLength = self.win.rsaDataLen.text()
+
+            message = f"task {RSAEncryption.NAME} encode {dataLength}"
+            self.client.send(message, True)
+
+            # Parse the encryption key from the server's message
+            keyMsg = self.waitForMessage()
+            self.logger.log(keyMsg, "server")
+            key = RSAEncryption.parseTaskKey(keyMsg)
+            self.win.rsaDebugN.setText(str(key[0]))
+            self.win.rsaDebugE.setText(str(key[1]))
+            self.logger.log(f"key = {key}", "task")
+
+            # Get the message to encrypt
+            plaintextMsg = self.waitForMessage()
+            self.logger.log(plaintextMsg, "server")
+            self.logger.log(f"plaintext = {plaintextMsg}", "task")
+
+            # Encrypt the message and send the result
+            transcoder = RSAEncryption(key)
+            self.logger.log(f"transcoder = {transcoder}", "task")
+
+            encrypted = transcoder.encode(plaintextMsg)
+            self.logger.log(f"encrypted bytes = {encrypted}", "task")
+            self.client.send(encrypted, True)
+
+            # Parse the answer and determine if it was a success
+            successMsg = self.waitForMessage()
+            self.logger.log(successMsg, "server")
+            success = self.parseEncodeSuccess(successMsg)
+
+            if success:
+                self.logger.log("Success !", "success")
+                self.win.rsaDebugSuccess.setText("Success !")
+            else:
+                self.logger.warn("Oops, it didn't work")
+                self.win.rsaDebugSuccess.setText("Failed !")
 
     def doVigenereTask(self) -> None:
         self.win.vigenereDebugSuccess.setText("-")
