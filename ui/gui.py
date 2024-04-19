@@ -6,7 +6,7 @@ from typing import Union
 
 from PyQt5 import uic
 from PyQt5.QtCore import QTimer
-from PyQt5.QtWidgets import QMainWindow, QApplication, QListWidgetItem
+from PyQt5.QtWidgets import QApplication, QListWidgetItem
 
 from ansi import ANSI
 from client.client import Client, MessageListener, NotConnectedError
@@ -15,7 +15,7 @@ from crypto.rsa_encryption import RSAEncryption
 from crypto.shift_encryption import ShiftEncryption
 from crypto.vigenere_encryption import VigenereEncryption
 from logger import Logger
-from utils import getRootPath
+from res.main import Ui_MainWindow
 from utils import getRootPath, formatException
 
 
@@ -37,7 +37,7 @@ class GUI(QApplication):
         })
         self.running = True
 
-        self.win: QMainWindow = uic.loadUi(os.path.join(getRootPath(), "res/main.ui"))
+        self.win: Ui_MainWindow = uic.loadUi(os.path.join(getRootPath(), "res/main.ui"))
         self.client: Client = client
         self.messageQueue: list[tuple[bool, bytes]] = []
         self.serverMessageQueue: list[bytes] = []
@@ -78,8 +78,11 @@ class GUI(QApplication):
             message: the message to add
         """
 
-        newLabel = QLabel(message)
-        self.win.messagesScroller.layout().addWidget(newLabel)
+        item = QListWidgetItem()
+        item.setText(message)
+        item.setToolTip(time.strftime("%H:%M:%S"))
+        self.win.messagesList.addItem(item)
+        self.win.messagesList.scrollToBottom()
 
     def chatMessage(self) -> None:
         """
