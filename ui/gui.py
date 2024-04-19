@@ -12,6 +12,7 @@ from ansi import ANSI
 from client.client import Client, MessageListener
 from client.protocol import Protocol
 from crypto.shift_encryption import ShiftEncryption
+from crypto.vigenere_encryption import VigenereEncryption
 from logger import Logger
 from utils import getRootPath
 
@@ -57,6 +58,8 @@ class GUI(QApplication):
 
         self.win.chatSendBtn.clicked.connect(self.chatMessage)
         self.win.shiftTaskBtn.clicked.connect(self.doShiftTask)
+
+        self.win.vigenereTaskBtn.clicked.connect(self.doVigenereTask)
 
         self.client.addOnReceiveListener(ReceivedMessageListener(self))
         self.client.addOnSendListener(SentMessageListener(self))
@@ -133,7 +136,7 @@ class GUI(QApplication):
             self.addMessage(messageText)
 
     def doShiftTask(self) -> None:
-        self.win.shiftSuccess.setText("-")
+        self.win.shiftDebugSuccess.setText("-")
         dataLength = self.win.shiftDataLen.text()
 
         message = f"task {ShiftEncryption.NAME} encode {dataLength}"
@@ -148,7 +151,7 @@ class GUI(QApplication):
 
         # Get the message to encrypt
         plaintextMsg = self.waitForMessage()
-        self.win.shiftMsgLabel.setText(plaintextMsg)
+        self.win.shiftDebugMessage.setText(plaintextMsg)
         self.logger.log(plaintextMsg, "server")
         self.logger.log(f"plaintext = {plaintextMsg}", "task")
 
@@ -167,10 +170,50 @@ class GUI(QApplication):
 
         if success:
             self.logger.log("Success !", "success")
-            self.win.shiftSuccess.setText("Success !")
+            self.win.shiftDebugSuccess.setText("Success !")
         else:
             self.logger.warn("Oops, it didn't work")
-            self.win.shiftSuccess.setText("Failed !")
+            self.win.shiftDebugSuccess.setText("Failed !")
+
+    def doVigenereTask(self) -> None:
+        self.win.vigenereDebugSuccess.setText("-")
+        dataLength = self.win.vigenereDataLen.text()
+
+        message = f"task {VigenereEncryption.NAME} encode {dataLength}"
+        self.client.send(message, True)
+
+        # Parse the encryption key from the server's message
+        keyMsg = self.waitForMessage()
+        self.logger.log(keyMsg, "server")
+        key = VigenereEncryption.parseTaskKey(keyMsg)
+        self.win.vigenereDebugKey.setText(str(key))
+        self.logger.log(f"key = {key}", "task")
+
+        # Get the message to encrypt
+        plaintextMsg = self.waitForMessage()
+        self.win.vigenereDebugMessage.setText(plaintextMsg)
+        self.logger.log(plaintextMsg, "server")
+        self.logger.log(f"plaintext = {plaintextMsg}", "task")
+
+        # Encrypt the message and send the result
+        transcoder = VigenereEncryption(key)
+        self.logger.log(f"transcoder = {transcoder}", "task")
+
+        encrypted = transcoder.encode(plaintextMsg)
+        self.logger.log(f"encrypted bytes = {encrypted}", "task")
+        self.client.send(encrypted, True)
+
+        # Parse the answer and determine if it was a success
+        successMsg = self.waitForMessage()
+        self.logger.log(successMsg, "server")
+        success = self.parseEncodeSuccess(successMsg)
+
+        if success:
+            self.logger.log("Success !", "success")
+            self.win.vigenereDebugSuccess.setText("Success !")
+        else:
+            self.logger.warn("Oops, it didn't work")
+            self.win.vigenereDebugSuccess.setText("Failed !")
 
     def parseEncodeSuccess(self, msg: str) -> bool:
         """
