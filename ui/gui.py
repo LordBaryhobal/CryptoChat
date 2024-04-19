@@ -34,34 +34,58 @@ class GUI(QApplication):
         })
 
         self.win: QMainWindow = uic.loadUi(os.path.join(getRootPath(), "res/main.ui"))
-        self.win.chatSendBtn.clicked.connect(self.chatMessage)
-        self.win.shiftTaskBtn.clicked.connect(self.doShiftTask)
-        self.win.show()
         self.client: Client = client
-        self.client.addOnReceiveListener(ReceivedMessageListener(self))
-        self.client.addOnSendListener(SentMessageListener(self))
-
         self.messageQueue: list[tuple[bool, bytes]] = []
         self.serverMessageQueue: list[bytes] = []
+        self.receiveTimer = QTimer()
 
         self.receiveThread = threading.Thread(target=self.receiveMessages)
-        self.receiveThread.start()
 
-        self.receiveTimer = QTimer()
-        self.receiveTimer.timeout.connect(self.collectMessages)
+        self.initListeners()
+
+        self.win.show()
+
+        self.receiveThread.start()
         self.receiveTimer.start(500)
 
         self.exec()
 
+    def initListeners(self) -> None:
+        """
+        Initializes the listeners (UI, client, etc.)
+        """
+
+        self.win.chatSendBtn.clicked.connect(self.chatMessage)
+        self.win.shiftTaskBtn.clicked.connect(self.doShiftTask)
+
+        self.client.addOnReceiveListener(ReceivedMessageListener(self))
+        self.client.addOnSendListener(SentMessageListener(self))
+
+        self.receiveTimer.timeout.connect(self.collectMessages)
+
     def addMessage(self, message: str) -> None:
+        """
+        Adds a message to the list
+        Args:
+            message: the message to add
+        """
+
         newLabel = QLabel(message)
         self.win.messagesScroller.layout().addWidget(newLabel)
 
     def chatMessage(self) -> None:
+        """
+        Sends a plaintext message to everybody
+        """
+
         senderMsg = self.win.chatMsg.text()
         self.client.send(senderMsg)
 
     def receiveMessages(self) -> None:
+        """
+        Loop to receive messages
+        """
+
         while True:
             try:
                 self.client.receive(True)
@@ -69,6 +93,16 @@ class GUI(QApplication):
                 self.logger.error("Received invalid message")
 
     def waitForMessage(self, rawBytes: bool = False) -> Union[bytes, str]:
+        """
+        Waits for a message to be received
+        Args:
+            rawBytes: if true, the payload will not be decoded and raw bytes will be returned
+        Returns:
+            the decoded message (either a string or bytes)
+        Raises:
+            ProtocolError: if the payload is malformed (missing magic bytes, invalid message type, etc.)
+        """
+
         while True:
             if len(self.serverMessageQueue) != 0:
                 break
@@ -79,6 +113,10 @@ class GUI(QApplication):
         return msg
 
     def collectMessages(self) -> None:
+        """
+        Collects messages in the queue and displays them on the GUI
+        """
+
         for i in range(len(self.messageQueue)):
             isSent, messageBytes = self.messageQueue.pop(0)
             messageType = Protocol.getMessageType(messageBytes)
