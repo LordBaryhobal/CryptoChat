@@ -32,6 +32,7 @@ class GUI(QApplication):
             "server": [ANSI.LMAGENTA, ANSI.ITALIC],
             "task": [ANSI.LBLUE]
         })
+        self.running = True
 
         self.win: QMainWindow = uic.loadUi(os.path.join(getRootPath(), "res/main.ui"))
         self.client: Client = client
@@ -49,6 +50,7 @@ class GUI(QApplication):
         self.receiveTimer.start(500)
 
         self.exec()
+        self.running = False
 
     def initListeners(self) -> None:
         """
@@ -86,7 +88,7 @@ class GUI(QApplication):
         Loop to receive messages
         """
 
-        while True:
+        while self.running:
             try:
                 self.client.receive(True)
             except:
