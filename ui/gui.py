@@ -6,16 +6,17 @@ from typing import Union
 
 from PyQt5 import uic
 from PyQt5.QtCore import QTimer
-from PyQt5.QtWidgets import QMainWindow, QApplication, QLabel
+from PyQt5.QtWidgets import QMainWindow, QApplication, QListWidgetItem
 
 from ansi import ANSI
-from client.client import Client, MessageListener
-from client.protocol import Protocol
+from client.client import Client, MessageListener, NotConnectedError
+from client.protocol import Protocol, ProtocolError
 from crypto.rsa_encryption import RSAEncryption
 from crypto.shift_encryption import ShiftEncryption
 from crypto.vigenere_encryption import VigenereEncryption
 from logger import Logger
 from utils import getRootPath
+from utils import getRootPath, formatException
 
 
 class GUI(QApplication):
@@ -48,6 +49,7 @@ class GUI(QApplication):
 
         self.win.show()
 
+        self.receiveThread.daemon = True
         self.receiveThread.start()
         self.receiveTimer.start(500)
 
@@ -95,8 +97,14 @@ class GUI(QApplication):
         while self.running:
             try:
                 self.client.receive(True)
-            except:
+            except ProtocolError as e:
                 self.logger.error("Received invalid message")
+                self.logger.error(formatException(e))
+                input("Press Enter to continue")
+            except NotConnectedError:
+                self.logger.error("You have been disconnected")
+                self.running = False
+
 
     def waitForMessage(self, rawBytes: bool = False) -> Union[bytes, str]:
         """
@@ -181,16 +189,16 @@ class GUI(QApplication):
     def doRSATask(self) -> None:
         encrypt = self.win.rsaEncryptRadio.isChecked()
 
+        dataLength = self.win.rsaDataLen.text()
+
+        message = f"task {RSAEncryption.NAME} {'encode' if encrypt else 'decode'} {dataLength}"
+        self.client.send(message, True)
+
         if encrypt:
             self.win.rsaDebugSuccess.setText("-")
             self.win.rsaDebugN.setText("-")
             self.win.rsaDebugE.setText("-")
             self.win.rsaDebugD.setText("-")
-
-            dataLength = self.win.rsaDataLen.text()
-
-            message = f"task {RSAEncryption.NAME} encode {dataLength}"
-            self.client.send(message, True)
 
             # Parse the encryption key from the server's message
             keyMsg = self.waitForMessage()
@@ -224,6 +232,21 @@ class GUI(QApplication):
             else:
                 self.logger.warn("Oops, it didn't work")
                 self.win.rsaDebugSuccess.setText("Failed !")
+
+        else:
+            taskMsg = self.waitForMessage()
+            self.logger.log(taskMsg, "server")
+
+            RSAEncryption.decryptTask(taskMsg, self.client.send, self.waitForMessage)
+
+            successMsg = self.client.receive()
+            self.logger.log(successMsg, "server")
+            success = self.parseDecodeSuccess(successMsg)
+
+            if success:
+                self.logger.log("Success !", "success")
+            else:
+                self.logger.warn("Oops, it didn't work")
 
     def doVigenereTask(self) -> None:
         self.win.vigenereDebugSuccess.setText("-")
@@ -278,6 +301,23 @@ class GUI(QApplication):
             return True
 
         if msg != "The encoding is invalid !":
+            self.logger.warn(f"Unrecognized success message: {msg}")
+
+        return False
+
+    def parseDecodeSuccess(self, msg: str) -> bool:
+        """
+        Parses the server's reply and determines the success of the last task
+        Args:
+            msg: the server's reply message
+        Returns:
+            true if it is a success, false otherwise
+        """
+
+        if msg == "he message is correct !":
+            return True
+
+        if msg != "The message is incorrect !":
             self.logger.warn(f"Unrecognized success message: {msg}")
 
         return False

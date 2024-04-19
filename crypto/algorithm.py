@@ -1,4 +1,4 @@
-from client.client import Client
+from typing import Callable
 
 
 class Algorithm:
@@ -18,5 +18,5 @@ class Algorithm:
         raise NotImplementedError
 
     @staticmethod
-    def decryptTask(taskMsg: str, client: Client) -> None:
+    def decryptTask(taskMsg: str, sendFunc: Callable, receiveFunc: Callable) -> None:
         raise NotImplementedError
