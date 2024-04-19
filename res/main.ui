@@ -24,7 +24,7 @@
     <item>
      <widget class="QTabWidget" name="tabWidget">
       <property name="currentIndex">
-       <number>1</number>
+       <number>4</number>
       </property>
       <widget class="QWidget" name="tab">
        <attribute name="title">
@@ -149,7 +149,7 @@
               </widget>
              </item>
              <item>
-              <widget class="QLabel" name="shiftMsgLabel">
+              <widget class="QLabel" name="shiftDebugMessage">
                <property name="text">
                 <string>-</string>
                </property>
@@ -167,7 +167,7 @@
               </widget>
              </item>
              <item>
-              <widget class="QLabel" name="shiftSuccess">
+              <widget class="QLabel" name="shiftDebugSuccess">
                <property name="text">
                 <string>-</string>
                </property>
@@ -325,30 +325,14 @@
              <item>
               <widget class="QLabel" name="label_30">
                <property name="text">
-                <string>Success ?</string>
+                <string>Outcome</string>
                </property>
               </widget>
              </item>
              <item>
-              <widget class="QPushButton" name="vigenereSuccessIcon">
-               <property name="enabled">
-                <bool>true</bool>
-               </property>
+              <widget class="QLabel" name="vigenereDebugSuccess">
                <property name="text">
-                <string/>
-               </property>
-               <property name="icon">
-                <iconset theme="user-offline">
-                 <normaloff>.</normaloff>.</iconset>
-               </property>
-               <property name="checkable">
-                <bool>false</bool>
-               </property>
-               <property name="default">
-                <bool>false</bool>
-               </property>
-               <property name="flat">
-                <bool>true</bool>
+                <string>TextLabel</string>
                </property>
               </widget>
              </item>
@@ -488,25 +472,9 @@
               </widget>
              </item>
              <item>
-              <widget class="QPushButton" name="rsaSuccessIcon">
-               <property name="enabled">
-                <bool>true</bool>
-               </property>
+              <widget class="QLabel" name="rsaDebugSuccess">
                <property name="text">
-                <string/>
-               </property>
-               <property name="icon">
-                <iconset theme="user-offline">
-                 <normaloff>.</normaloff>.</iconset>
-               </property>
-               <property name="checkable">
-                <bool>false</bool>
-               </property>
-               <property name="default">
-                <bool>false</bool>
-               </property>
-               <property name="flat">
-                <bool>true</bool>
+                <string>TextLabel</string>
                </property>
               </widget>
              </item>
@@ -531,7 +499,7 @@
               </widget>
              </item>
              <item>
-              <widget class="QLabel" name="rsaN">
+              <widget class="QLabel" name="rsaDebugN">
                <property name="text">
                 <string>0</string>
                </property>
@@ -549,7 +517,7 @@
               </widget>
              </item>
              <item>
-              <widget class="QLabel" name="rsaE">
+              <widget class="QLabel" name="rsaDebugE">
                <property name="text">
                 <string>0</string>
                </property>
@@ -567,7 +535,7 @@
               </widget>
              </item>
              <item>
-              <widget class="QLabel" name="rsaD">
+              <widget class="QLabel" name="rsaDebugD">
                <property name="text">
                 <string>0</string>
                </property>
@@ -607,7 +575,7 @@
            <item>
             <layout class="QHBoxLayout" name="horizontalLayout_19">
              <item>
-              <widget class="QPushButton" name="pushButton_4">
+              <widget class="QPushButton" name="difhelTaskBtn">
                <property name="text">
                 <string>Start task</string>
                </property>
@@ -634,7 +602,7 @@
               </widget>
              </item>
              <item>
-              <widget class="QLabel" name="label_18">
+              <widget class="QLabel" name="difHelDebugSecret">
                <property name="text">
                 <string>0</string>
                </property>
