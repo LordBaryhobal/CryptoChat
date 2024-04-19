@@ -72,13 +72,15 @@ def gcd(a: int, b: int) -> int:
 
     return a
 
+
 def getPrimeFactors(n) -> list[int]:
     primeFactors = []
     for i in range(2, n):
-        while (n % i == 0):
-                n /= i
-                primeFactors.append(i)
+        while n % i == 0:
+            n /= i
+            primeFactors.append(i)
     return primeFactors
+
 
 if __name__ == '__main__':
     print(gcd(144, 60))
