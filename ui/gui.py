@@ -1,10 +1,10 @@
 import os
 
 from PyQt5 import uic
-from PyQt5.QtWidgets import QWidget, QMainWindow, QApplication
-import sys
+from PyQt5.QtWidgets import QMainWindow, QApplication
+
 from client.client import Client
-from utils import relpath, getRootPath
+from utils import getRootPath
 
 
 class GUI(QApplication):
@@ -18,6 +18,9 @@ class GUI(QApplication):
         self.win.show()
         self.client: Client = client
         self.exec()
+
+    def addMessage(self, message: str) -> None:
+        raise NotImplementedError
 
 
 if __name__ == '__main__':

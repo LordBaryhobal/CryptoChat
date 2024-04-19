@@ -26,6 +26,8 @@ class Client:
             "warning": [ANSI.YELLOW, ANSI.ITALIC],
             "success": [ANSI.LGREEN, ANSI.ITALIC]
         })
+        self.sendListeners: list[MessageListener] = []
+        self.receiveListeners: list[MessageListener] = []
 
     def __enter__(self) -> "Client":
         success = self.connect()
@@ -79,6 +81,7 @@ class Client:
             raise NotConnectedError("Cannot send messages unless connected to the server")
 
         payload = Protocol.encode(msg, onlyServer)
+        self._onSend(payload)
         self.socket.send(payload)
 
     def receive(self, rawBytes: bool = False) -> Union[str, bytes]:
@@ -108,9 +111,30 @@ class Client:
         # Read payload
         msgBytes += self.socket.recv(payloadLength)
 
+        self._onReceive(msgBytes)
+
         msg = Protocol.decode(msgBytes, rawBytes)
         if isinstance(msg, (str, bytes)):
             return msg
 
         else:
             return f"<image ({msg.width}x{msg.height})>"
+
+    def addOnSendListener(self, listener: "MessageListener") -> None:
+        self.sendListeners.append(listener)
+
+    def addOnReceiveListener(self, listener: "MessageListener") -> None:
+        self.receiveListeners.append(listener)
+
+    def _onReceive(self, msgBytes: bytes) -> None:
+        for listener in self.receiveListeners:
+            listener.onMessage(msgBytes)
+
+    def _onSend(self, msgBytes: bytes) -> None:
+        for listener in self.sendListeners:
+            listener.onMessage(msgBytes)
+
+
+class MessageListener:
+    def onMessage(self, msgBytes: bytes) -> None:
+        raise NotImplementedError
