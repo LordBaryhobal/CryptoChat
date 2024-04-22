@@ -11,6 +11,7 @@ from PyQt5.QtWidgets import QApplication, QListWidgetItem
 from ansi import ANSI
 from client.client import Client, MessageListener, NotConnectedError
 from client.protocol import Protocol, ProtocolError
+from crypto.diffie_hellman import DiffieHellman
 from crypto.rsa_encryption import RSAEncryption
 from crypto.shift_encryption import ShiftEncryption
 from crypto.vigenere_encryption import VigenereEncryption
@@ -38,6 +39,7 @@ class GUI(QApplication):
         self.running = True
 
         self.win: Ui_MainWindow = uic.loadUi(os.path.join(getRootPath(), "res/main.ui"))
+        self.win.setWindowTitle("CryptoChat")
         self.client: Client = client
         self.messageQueue: list[tuple[bool, bytes]] = []
         self.serverMessageQueue: list[bytes] = []
@@ -65,6 +67,7 @@ class GUI(QApplication):
         self.win.shiftTaskBtn.clicked.connect(self.doShiftTask)
         self.win.vigenereTaskBtn.clicked.connect(self.doVigenereTask)
         self.win.rsaTaskBtn.clicked.connect(self.doRSATask)
+        self.win.difhelTaskBtn.clicked.connect(self.doDifHelTask)
 
         self.client.addOnReceiveListener(ReceivedMessageListener(self))
         self.client.addOnSendListener(SentMessageListener(self))
@@ -291,6 +294,57 @@ class GUI(QApplication):
             self.logger.warn("Oops, it didn't work")
             self.win.vigenereDebugSuccess.setText("Failed !")
 
+    def doDifHelTask(self) -> None:
+        message = f"task {DiffieHellman.NAME}"
+        self.client.send(message, True)
+
+        taskMsg = self.waitForMessage()
+        self.logger.log(taskMsg, "server")
+
+        diffieHellman = DiffieHellman()
+        self.logger.log(f"p = {diffieHellman.p}", "task")
+        self.logger.log(f"g = {diffieHellman.g}", "task")
+        self.win.difHelP.setText(str(diffieHellman.p))
+        self.win.difHelG.setText(str(diffieHellman.g))
+        self.win.difHelA.setText(str(diffieHellman.a))
+        self.win.difHelGA.setText(str(diffieHellman.gA))
+
+        spaceMsg = f"{diffieHellman.p},{diffieHellman.g}"
+        self.client.send(spaceMsg, True)
+
+        taskMsg = self.waitForMessage()
+        self.logger.log(taskMsg, "server")
+        halfBMsg = self.waitForMessage()
+        halfB = int(halfBMsg)
+        self.logger.log(halfBMsg, "server")
+        self.logger.log(f"g^B = {halfB}", "task")
+        self.win.difHelGB.setText(halfBMsg)
+
+        secret = diffieHellman.compute_secret(halfB)
+        self.logger.log(f"secret = {secret}", "task")
+        self.win.difHelDebugSecret.setText(str(secret))
+
+        halfAMsg = str(diffieHellman.gA)
+        self.client.send(halfAMsg, True)
+
+        taskMsg = self.waitForMessage()
+        self.logger.log(taskMsg, "server")
+
+        secretMsg = str(secret)
+        self.client.send(secretMsg, True)
+
+        successMsg = self.waitForMessage()
+        self.logger.log(successMsg, "server")
+        success = self.parseDiffieHellmanSuccess(successMsg)
+
+        if success:
+            self.logger.log("Success !", "success")
+            self.win.difHelDebugSuccess.setText("Success !")
+        else:
+            self.logger.warn("Oops, it didn't work")
+            self.win.difHelDebugSuccess.setText("Failed !")
+
+
     def parseEncodeSuccess(self, msg: str) -> bool:
         """
         Parses the server's reply and determines the success of the last task
@@ -325,6 +379,22 @@ class GUI(QApplication):
 
         return False
 
+    def parseDiffieHellmanSuccess(self, msg: str) -> bool:
+        """
+        Parses the server's reply and determines the success of the last task
+        Args:
+            msg: the server's reply message
+        Returns:
+            true if it is a success, false otherwise
+        """
+        if msg == "The shared secret has been validated !":
+            return True
+
+        if msg != "The shared secret is not the same as the server, try again":
+            self.logger.warn(f"Unrecognized success message: {msg}")
+
+        return False
+
 
 class SentMessageListener(MessageListener):
     def __init__(self, gui: GUI):
@@ -332,6 +402,7 @@ class SentMessageListener(MessageListener):
 
     def onMessage(self, msgBytes: bytes) -> None:
         self.gui.messageQueue.append((True, msgBytes))
+
 
 class ReceivedMessageListener(MessageListener):
     def __init__(self, gui: GUI):
@@ -344,6 +415,7 @@ class ReceivedMessageListener(MessageListener):
             self.gui.serverMessageQueue.append(msgBytes)
 
         self.gui.messageQueue.append((False, msgBytes))
+
 
 if __name__ == '__main__':
     def except_hook(cls, exception, traceback):

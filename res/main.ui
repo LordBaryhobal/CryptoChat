@@ -604,7 +604,25 @@
              <item>
               <widget class="QLabel" name="difHelDebugSecret">
                <property name="text">
-                <string>0</string>
+                <string>-</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item>
+            <layout class="QHBoxLayout" name="horizontalLayout_27">
+             <item>
+              <widget class="QLabel" name="label_4">
+               <property name="text">
+                <string>Outcome</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="difHelDebugSuccess">
+               <property name="text">
+                <string>-</string>
                </property>
               </widget>
              </item>
@@ -631,7 +649,7 @@
              <item>
               <widget class="QLabel" name="difHelG">
                <property name="text">
-                <string>0</string>
+                <string>-</string>
                </property>
               </widget>
              </item>
@@ -649,7 +667,7 @@
              <item>
               <widget class="QLabel" name="difHelP">
                <property name="text">
-                <string>0</string>
+                <string>-</string>
                </property>
               </widget>
              </item>
@@ -667,7 +685,43 @@
              <item>
               <widget class="QLabel" name="difHelA">
                <property name="text">
-                <string>0</string>
+                <string>-</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item>
+            <layout class="QHBoxLayout" name="horizontalLayout_28">
+             <item>
+              <widget class="QLabel" name="label_8">
+               <property name="text">
+                <string>g^a (client half-key)</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="difHelGA">
+               <property name="text">
+                <string>-</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item>
+            <layout class="QHBoxLayout" name="horizontalLayout_29">
+             <item>
+              <widget class="QLabel" name="label_12">
+               <property name="text">
+                <string>g^b (server half-key)</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="difHelGB">
+               <property name="text">
+                <string>-</string>
                </property>
               </widget>
              </item>
@@ -680,6 +734,9 @@
          <spacer name="verticalSpacer_6">
           <property name="orientation">
            <enum>Qt::Vertical</enum>
+          </property>
+          <property name="sizeType">
+           <enum>QSizePolicy::Expanding</enum>
           </property>
           <property name="sizeHint" stdset="0">
            <size>
