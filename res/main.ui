@@ -115,7 +115,17 @@
               </widget>
              </item>
              <item>
-              <widget class="QSpinBox" name="shiftDataLen"/>
+              <widget class="QSpinBox" name="shiftDataLen">
+               <property name="minimum">
+                <number>1</number>
+               </property>
+               <property name="maximum">
+                <number>10000</number>
+               </property>
+               <property name="value">
+                <number>1</number>
+               </property>
+              </widget>
              </item>
             </layout>
            </item>
@@ -278,7 +288,14 @@
               </widget>
              </item>
              <item>
-              <widget class="QSpinBox" name="vigenereDataLen"/>
+              <widget class="QSpinBox" name="vigenereDataLen">
+               <property name="minimum">
+                <number>1</number>
+               </property>
+               <property name="maximum">
+                <number>10000</number>
+               </property>
+              </widget>
              </item>
             </layout>
            </item>
@@ -438,7 +455,14 @@
               </widget>
              </item>
              <item>
-              <widget class="QSpinBox" name="rsaDataLen"/>
+              <widget class="QSpinBox" name="rsaDataLen">
+               <property name="minimum">
+                <number>1</number>
+               </property>
+               <property name="maximum">
+                <number>10000</number>
+               </property>
+              </widget>
              </item>
             </layout>
            </item>

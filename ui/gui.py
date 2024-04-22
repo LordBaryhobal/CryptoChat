@@ -4,18 +4,21 @@ import threading
 import time
 from typing import Union
 
-from PyQt5 import uic
-from PyQt5.QtCore import QTimer
+import qdarktheme
+from PyQt5 import uic, QtCore
+from PyQt5.QtCore import QTimer, QTextStream, QFile
 from PyQt5.QtWidgets import QApplication, QListWidgetItem
 
 from ansi import ANSI
 from client.client import Client, MessageListener, NotConnectedError
 from client.protocol import Protocol, ProtocolError
+from config import Config
 from crypto.diffie_hellman import DiffieHellman
 from crypto.rsa_encryption import RSAEncryption
 from crypto.shift_encryption import ShiftEncryption
 from crypto.vigenere_encryption import VigenereEncryption
 from logger import Logger
+from res.config import Ui_Dialog
 from res.main import Ui_MainWindow
 from utils import getRootPath, formatException
 
@@ -38,6 +41,7 @@ class GUI(QApplication):
         })
         self.running = True
 
+        qdarktheme.setup_theme(Config.THEME)
         self.win: Ui_MainWindow = uic.loadUi(os.path.join(getRootPath(), "res/main.ui"))
         self.win.setWindowTitle("CryptoChat")
         self.client: Client = client
@@ -68,6 +72,8 @@ class GUI(QApplication):
         self.win.vigenereTaskBtn.clicked.connect(self.doVigenereTask)
         self.win.rsaTaskBtn.clicked.connect(self.doRSATask)
         self.win.difhelTaskBtn.clicked.connect(self.doDifHelTask)
+
+        self.win.actionOptions.triggered.connect(self.openOptions)
 
         self.client.addOnReceiveListener(ReceivedMessageListener(self))
         self.client.addOnSendListener(SentMessageListener(self))
@@ -395,6 +401,25 @@ class GUI(QApplication):
 
         return False
 
+    def openOptions(self) -> None:
+        dialog: Ui_Dialog = uic.loadUi(os.path.join(getRootPath(), "res/config.ui"))
+        dialog.host.setText(Config.HOST)
+        dialog.port.setValue(Config.PORT)
+        dialog.themes.setCurrentText(Config.THEME.title())
+
+        dialog.accepted.connect(lambda: self.saveConfig(dialog))
+        dialog.setAttribute(QtCore.Qt.WA_DeleteOnClose)
+        dialog.exec_()
+
+    def saveConfig(self, dialog: Ui_Dialog) -> None:
+        Config.HOST = dialog.host.text()
+        Config.PORT = dialog.port.value()
+        Config.THEME = dialog.themes.currentText().lower()
+        Config.save()
+        qdarktheme.setup_theme(Config.THEME)
+        if Config.HOST != self.client.host or Config.PORT != self.client.port:
+            self.client.reconnect(Config.HOST, Config.PORT)
+
 
 class SentMessageListener(MessageListener):
     def __init__(self, gui: GUI):
@@ -424,5 +449,5 @@ if __name__ == '__main__':
 
     sys.excepthook = except_hook
 
-    with Client("vlbelintrocrypto.hevs.ch", 6000) as client:
+    with Client(Config.HOST, Config.PORT) as client:
         GUI(client)

@@ -134,6 +134,18 @@ class Client:
         for listener in self.sendListeners:
             listener.onMessage(msgBytes)
 
+    def reconnect(self, host: str, port: int) -> None:
+        """
+        Tries to reconnect to the server with the new host and port
+        Args:
+            host: the new host
+            port: the new port
+        """
+        self.disconnect()
+        self.host = host
+        self.port = port
+        self.connect()
+
 
 class MessageListener:
     def onMessage(self, msgBytes: bytes) -> None:
