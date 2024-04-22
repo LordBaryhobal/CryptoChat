@@ -69,6 +69,7 @@ class GUI(QApplication):
         """
 
         self.win.chatSendBtn.clicked.connect(self.chatMessage)
+        self.win.chatMsg.returnPressed.connect(self.chatMessage)
         self.win.shiftTaskBtn.clicked.connect(self.doShiftTask)
         self.win.vigenereTaskBtn.clicked.connect(self.doVigenereTask)
         self.win.rsaTaskBtn.clicked.connect(self.doRSATask)
@@ -108,6 +109,7 @@ class GUI(QApplication):
 
         senderMsg = self.win.chatMsg.text()
         self.client.send(senderMsg)
+        self.win.chatMsg.setText("")
 
     def receiveMessages(self) -> None:
         """
