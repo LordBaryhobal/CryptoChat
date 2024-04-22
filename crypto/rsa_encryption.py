@@ -1,6 +1,6 @@
 import random
 import re
-from typing import Optional
+from typing import Optional, Callable
 
 from client.client import Client
 from client.protocol import Protocol
@@ -99,7 +99,7 @@ class RSAEncryption(Algorithm):
         return (publicKey, privateKey)
 
     @staticmethod
-    def decryptTask(taskMsg: str, client: Client) -> None:
+    def decryptTask(taskMsg: str, sendFunc: Callable, receiveFunc: Callable) -> None:
         # Generate key pair
         public, private = RSAEncryption.generateKeyPair()
         publicStr = f"{public[0]},{public[1]}"
@@ -108,18 +108,20 @@ class RSAEncryption(Algorithm):
         print("message sent to server: " + publicStr)
 
         # Send public key (as n,e)
-        client.send(publicStr, True)
+        sendFunc(publicStr, True)
 
-        # Rreceive encrypted message
-        encryptedMessage = client.receive(True)
-        print(encryptedMessage)
+        # Receive encrypted message
+        encryptedMessage = receiveFunc(True)
+        print("encrypted", encryptedMessage)
+
+        length, encryptedMessage = encryptedMessage[:2], encryptedMessage[2:]
 
         # Decrypt message using private key
         decryptedMessage = decryptor.decode(encryptedMessage)
-        print(decryptedMessage)
+        print("decrypted", decryptedMessage)
 
         # Send decrypted message
-        client.send(decryptedMessage, True)
+        sendFunc(decryptedMessage, True)
 
 
 if __name__ == "__main__":

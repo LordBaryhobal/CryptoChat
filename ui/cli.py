@@ -149,7 +149,7 @@ class CLI:
             taskMsg = self.client.receive()
             self.logger.log(taskMsg, "server")
 
-            algorithm.decryptTask(taskMsg, self.client)
+            algorithm.decryptTask(taskMsg, self.client.send, self.client.receive)
 
             successMsg = self.client.receive()
             self.logger.log(successMsg, "server")
