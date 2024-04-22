@@ -20,7 +20,7 @@ from crypto.vigenere_encryption import VigenereEncryption
 from logger import Logger
 from res.config import Ui_Dialog
 from res.main import Ui_MainWindow
-from utils import getRootPath, formatException
+from utils import getRootPath, formatException, relpath
 
 
 class GUI(QApplication):
@@ -47,6 +47,7 @@ class GUI(QApplication):
         self.client: Client = client
         self.messageQueue: list[tuple[bool, bytes]] = []
         self.serverMessageQueue: list[bytes] = []
+        self.displayedMessages: list[tuple[float, bool, str, str]] = []
         self.receiveTimer = QTimer()
 
         self.receiveThread = threading.Thread(target=self.receiveMessages)
@@ -74,11 +75,18 @@ class GUI(QApplication):
         self.win.difhelTaskBtn.clicked.connect(self.doDifHelTask)
 
         self.win.actionOptions.triggered.connect(self.openOptions)
+        self.win.actionQuit.triggered.connect(self.quit)
+        self.win.actionClear.triggered.connect(self.clearMessages)
+        self.win.actionExport.triggered.connect(self.exportMessages)
 
         self.client.addOnReceiveListener(ReceivedMessageListener(self))
         self.client.addOnSendListener(SentMessageListener(self))
 
         self.receiveTimer.timeout.connect(self.collectMessages)
+
+    def clearMessages(self) -> None:
+        self.win.messagesList.clear()
+        self.displayedMessages = []
 
     def addMessage(self, message: str) -> None:
         """
@@ -145,18 +153,19 @@ class GUI(QApplication):
 
         for i in range(len(self.messageQueue)):
             isSent, messageBytes = self.messageQueue.pop(0)
-            messageType = Protocol.getMessageType(messageBytes)
+            messageType = Protocol.getMessageType(messageBytes).decode("utf-8")
             messageText = "> " if isSent else "< "
-            messageText += f"[{messageType.decode('utf-8')}] "
+            messageText += f"[{messageType}] "
             try:
-                decodedMessage = Protocol.decode(messageBytes)
-                messageText += decodedMessage
+                content = Protocol.decode(messageBytes)
 
             except:
                 payloadBytes = Protocol.decode(messageBytes, True)
-                messageText += "(encrypted) " + payloadBytes.hex()
+                content = "(encrypted) " + payloadBytes.hex()
 
+            messageText += content
             self.addMessage(messageText)
+            self.displayedMessages.append((time.time(), isSent, messageType, content))
 
     def doShiftTask(self) -> None:
         self.win.shiftDebugSuccess.setText("-")
@@ -419,6 +428,20 @@ class GUI(QApplication):
         qdarktheme.setup_theme(Config.THEME)
         if Config.HOST != self.client.host or Config.PORT != self.client.port:
             self.client.reconnect(Config.HOST, Config.PORT)
+
+    def exportMessages(self) -> None:
+        folder = os.path.join(getRootPath(), "exports")
+        path = os.path.join(folder, time.strftime("messages_%Y%m%d_%H%M%S.csv"))
+
+        if not os.path.isdir(folder):
+            os.mkdir(folder)
+
+        with open(path, "w") as f:
+            f.write('"timestamp","sent","type","message"\n')
+            for ts, sent, type_, content in self.displayedMessages:
+                f.write(f"{ts},{'true' if sent else 'false'},\"{type_}\",\"{content}\"\n")
+
+            self.logger.log(f"Exported messages to {relpath(path)}", "success")
 
 
 class SentMessageListener(MessageListener):
