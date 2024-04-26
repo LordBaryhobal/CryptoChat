@@ -1,5 +1,16 @@
 import socket
-from typing import Union
+from typing import Union, Optional
+
+from PIL import Image
+
+from ansi import ANSI
+from client.protocol import Protocol
+from logger import Logger
+from utils import formatException
+
+
+class NotConnectedError(Exception):
+    ...
 
 
 class Client:
@@ -8,22 +19,39 @@ class Client:
     def __init__(self, host: str, port: int) -> None:
         self.host: str = host
         self.port: int = port
-        self.socket: Union[socket.socket, None] = None
+        self.socket: Optional[socket.socket] = None
+        self.logger = Logger("Client", styles={
+            "info": [],
+            "error": [ANSI.RED, ANSI.BOLD],
+            "warning": [ANSI.YELLOW, ANSI.ITALIC],
+            "success": [ANSI.LGREEN, ANSI.ITALIC]
+        })
+        self.sendListeners: list[MessageListener] = []
+        self.receiveListeners: list[MessageListener] = []
+
+    def __enter__(self) -> "Client":
+        success = self.connect()
+        return self
+
+    def __exit__(self, *args) -> None:
+        self.disconnect()
 
     def connect(self) -> bool:
         """
         Tries to connect to the server
 
-        Returns: True if the connection was successful, False otherwise
+        Returns:
+            `True` if the connection was successful, `False` otherwise
         """
 
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
         try:
             self.socket.connect((self.host, self.port))
-        except socket.error:
+        except socket.error as e:
             self.socket = None
-            print("An error occurred while trying to connect")
+            self.logger.error("An error occurred while trying to connect")
+            self.logger.error(formatException(e))
             return False
 
         return True
@@ -37,49 +65,88 @@ class Client:
             self.socket.close()
             self.socket = None
 
-    def send(self, msg: str, msgType: str = "t") -> None:
+    def send(self, msg: Union[bytes, str, Image.Image], onlyServer: bool = False) -> None:
         """
-        Sends a message with the given message type
+        Sends a message
         Args:
             msg: the message to send
-            msgType: the message type (one of 't', 'i' or 's')
+            onlyServer: (for text message) whether this message is only sent to the server or broadcast to everyone
+        Raises:
+            TypeError: if the payload is neither a string nor a PIL Image
+            ValueError: if the payload is an image exceeding the size limitations
+            NotConnectedError: if the client is not connected to the server
         """
 
-        payload = b"ISC" + msgType.encode("utf-8")
-        length = len(msg)
-        payload += length.to_bytes(2, "big")
+        if self.socket is None:
+            raise NotConnectedError("Cannot send messages unless connected to the server")
 
-        msgBytes = msg.encode("utf-8")
-        for b in msgBytes:
-            payload += bytes([0, 0, 0, b])
-
+        payload = Protocol.encode(msg, onlyServer)
+        self._onSend(payload)
         self.socket.send(payload)
 
-    def receive(self) -> str:
+    def receive(self, rawBytes: bool = False) -> Union[str, bytes]:
         """
         Waits and reads a message from the server
 
-        Returns: the received message, or an empty string
-        if the format is incorrect
+        Args:
+            rawBytes: whether to receive a structured message (text or image) or raw bytes (i.e. not decoded)
+        Returns:
+            the received message, or an empty string if the format is incorrect
+        Raises:
+            ProtocolError: if the payload is malformed (missing magic bytes, invalid message type, etc.)
+            NotConnectedError: if the client is not connected to the server
         """
 
-        msgBytes = self.socket.recv(4096)
+        if self.socket is None:
+            raise NotConnectedError("Cannot receive messages unless connected to the server")
 
-        if msgBytes[0:3] != b"ISC":
-            print(f"Format error: the payload does not start with ISC but {msgBytes[0:3]}")
-            return ""
+        # Read magic bytes + type byte
+        msgBytes = self.socket.recv(len(Protocol.MAGIC) + 1)
+        lengthBytes = Protocol.getPayloadLengthBytesCount(msgBytes)
 
-        msgType = msgBytes[3:4].decode("utf-8")
+        # Read payload size
+        msgBytes += self.socket.recv(lengthBytes)
+        payloadLength = Protocol.getPayloadLength(msgBytes)
 
-        if msgType not in ["t", "i", "s"]:
-            print(f"Format error: the message type is '{msgType}'")
-            return ""
+        # Read payload
+        msgBytes += self.socket.recv(payloadLength)
 
-        length = int.from_bytes(msgBytes[4:6], "big")
+        self._onReceive(msgBytes)
 
-        msg = b""
-        for i in range(0, length):
-            offset = 9 + i * 4
-            msg += msgBytes[offset:offset + 1]
+        msg = Protocol.decode(msgBytes, rawBytes)
+        if isinstance(msg, (str, bytes)):
+            return msg
 
-        return msg.decode("utf-8")
+        else:
+            return f"<image ({msg.width}x{msg.height})>"
+
+    def addOnSendListener(self, listener: "MessageListener") -> None:
+        self.sendListeners.append(listener)
+
+    def addOnReceiveListener(self, listener: "MessageListener") -> None:
+        self.receiveListeners.append(listener)
+
+    def _onReceive(self, msgBytes: bytes) -> None:
+        for listener in self.receiveListeners:
+            listener.onMessage(msgBytes)
+
+    def _onSend(self, msgBytes: bytes) -> None:
+        for listener in self.sendListeners:
+            listener.onMessage(msgBytes)
+
+    def reconnect(self, host: str, port: int) -> None:
+        """
+        Tries to reconnect to the server with the new host and port
+        Args:
+            host: the new host
+            port: the new port
+        """
+        self.disconnect()
+        self.host = host
+        self.port = port
+        self.connect()
+
+
+class MessageListener:
+    def onMessage(self, msgBytes: bytes) -> None:
+        raise NotImplementedError
